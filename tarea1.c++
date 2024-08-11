@@ -1,4 +1,8 @@
+// Rodrigo Castellanos A01643147
+// Luis Olmedo A01643557
+
 #include <iostream>
+#include <limits>
 using namespace std;
 
 void merge(double arr[], int left, int mid, int right){ // Función que ordena de menor a mayor el arreglo
@@ -55,21 +59,31 @@ void mergeSort(double arr[], int left, int right){ // Función que divide el arr
 };
 
 int main(){
-    cout << "Cuantos elementos tendrá el arreglo: " << endl;
+    cout << "Cuantos elementos tendrá el arreglo: ";
     int N;
-    cin >> N; 
+    while(!(cin >> N) || cin.peek() != '\n') {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Por favor, ingrese un número entero válido: ";
+    }
 
     double* arr = new double[N];
 
-    for(int i = 0; i < N; i++){
-        cin >> arr[i];
+    for(int i = 0; i < N; i++) {
+        cout << "Elemento " << i + 1 << ": ";
+        while(!(cin >> arr[i]) || cin.peek() != '\n') {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Por favor, ingrese un número decimal válido: ";
+        }
     }
 
     mergeSort(arr, 0, N - 1);
 
+    cout << "La lista final ordenada de mayor a menor es: ";
     for(int i = 0; i < N; i++){
         cout << arr[i];
-        if( i < N - 1) cout << " ";
+        if( i < N - 1) cout << ", ";
     }
     cout << endl;
 
