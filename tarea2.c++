@@ -8,8 +8,8 @@ using namespace std;
 // Definición de la clase HashTable que implementa una tabla hash.
 class HashTable {
 private:
-    static const int INITIAL_CAPACITY = 10;  // Capacidad inicial de la tabla
-    static const float LOAD_FACTOR;  // Factor de carga máximo antes de redimensionar
+    int INITIAL_CAPACITY = 10;  // Capacidad inicial de la tabla
+    float LOAD_FACTOR = 0.80;  // Factor de carga máximo antes de redimensionar
     int capacity;  // Capacidad actual de la tabla
     int itemCount;  // Número de elementos en la tabla
     vector<list<pair<int, string>>> table;  // Tabla hash, almacenada como un vector de listas de pares (clave, valor)
@@ -21,27 +21,31 @@ private:
 
     // Redimensiona la tabla cuando el factor de carga se excede
     void resize() {
-        int newCapacity = capacity * 1.8; // Aumenta la capacidad en un 80%
-        newCapacity = newCapacity < 10 ? 10 : newCapacity; // Asegura una capacidad mínima de 10
-        vector<list<pair<int, string>>> newTable(newCapacity);
-        
-        // Reubica todos los elementos de la tabla vieja a la nueva
-        for (const auto& bucket : table) {
-            for (const auto& pair : bucket) {
-                int newIndex = pair.first % newCapacity;
-                newTable[newIndex].push_back(pair);
+    int newCapacity = capacity * 1.8; // Aumenta la capacidad en un 80%
+    vector<list<pair<int, string>>> newTable(newCapacity); // Se crea una nueva hash table
+
+    // Reubica todos los elementos de la tabla vieja a la nueva
+    // este for recorre cada bucket de la hash table anterior
+    for (int i = 0; i < table.size(); i++) {
+        list<pair<int, string>>& bucket = table[i];  // bucket viejo hace referencia directa a 
+        // uno de los buckets de la nueva tabla hashs
+        // este for recorre cada elemento en la lista (es decir, cada par clave-valor) dentro del bucket actual.
+        for (const pair<int, string>& item : bucket) { // item es una referencia constante a cada par pair<int, string> dentro del bucket.
+            int newIndex = item.first % newCapacity; // es la clave del par actual (item), y se utiliza para calcular el nuevo índice 
+            // en la tabla hash con la nueva capacidad 
+            newTable[newIndex].push_back(item);
+            // el par actual (item) se agrega al bucket correspondiente en la nueva tabla hash
             }
         }
-        
-        // Asigna la nueva tabla y actualiza la capacidad
-        table = move(newTable);
-        capacity = newCapacity;
+    // Asigna la nueva tabla y actualiza la capacidad
+    table = move(newTable); // move convierte un objeto en un rvalue, permitiendo la transferencia eficiente de recursos.
+    capacity = newCapacity;
     }
 
 public:
     // Constructor que inicializa la tabla hash con la capacidad inicial y un contador de elementos a cero
     HashTable() : capacity(INITIAL_CAPACITY), itemCount(0) {
-        table.resize(capacity);
+        table.resize(capacity); // 
     }
 
     // Verifica si la tabla está vacía
@@ -51,77 +55,72 @@ public:
 
     // Inserta un nuevo par clave-valor en la tabla
     void insertItem(int key, string value) {
-        // Redimensiona la tabla si se supera el factor de carga
-        if ((float)(itemCount + 1) / capacity > LOAD_FACTOR) {
-            resize();
-        }
-        
-        int hashValue = hashFunction(key); // Calcula el índice de la tabla usando la función hash
-        auto& cell = table[hashValue]; // Referencia al bucket correspondiente
-        auto bItr = begin(cell);
-        bool keyExists = false;
-
-        // Recorre el bucket para verificar si la clave ya existe
-        for (; bItr != end(cell); bItr++) {
-            if (bItr->first == key) {
-                keyExists = true;
-                bItr->second = value; // Si la clave existe, reemplaza el valor
-                cout << "[WARNING] Key exists. Value replaced." << endl;
-                break;
-            }
-        }
-        if (!keyExists) {
-            cell.emplace_back(key, value); // Si la clave no existe, inserta el nuevo par clave-valor
-            itemCount++;
-        }
+    if ((float)(itemCount + 1) / capacity > LOAD_FACTOR) {
+        resize();
+    }
+    
+    int hashValue = hashFunction(key);
+    auto& cell = table[hashValue];
+    
+    // Simplemente añadimos el nuevo par clave-valor al final de la lista
+    cell.emplace_back(key, value);
+    itemCount++;
+    
+    cout << "[INFO] Item inserted." << endl;
     }
 
     // Elimina un elemento de la tabla usando la clave
     void removeItem(int key) {
-        int hashValue = hashFunction(key); // Calcula el índice de la tabla usando la función hash
-        auto& cell = table[hashValue]; // Referencia al bucket correspondiente
-        auto bItr = begin(cell);
-        bool keyExists = false;
+    int hashValue = hashFunction(key);
+    auto& cell = table[hashValue];
+    auto bItr = begin(cell);
+    bool keyFound = false;
 
-        // Recorre el bucket para encontrar la clave
-        for (; bItr != end(cell); bItr++) {
-            if (bItr->first == key) {
-                keyExists = true;
-                bItr = cell.erase(bItr); // Elimina el par clave-valor si la clave es encontrada
-                itemCount--;
-                cout << "[INFO] Item removed." << endl;
-                break;
-            }
-        }
-        if (!keyExists) {
-            cout << "[WARNING] Key not found. Nothing removed." << endl;
+    while (bItr != end(cell)) {
+        if (bItr->first == key) {
+            bItr = cell.erase(bItr);
+            itemCount--;
+            keyFound = true;
+        } else {
+            ++bItr;
         }
     }
 
-    // Busca un valor en la tabla usando la clave
-    string searchTable(int key) {
-        int hashValue = hashFunction(key); // Calcula el índice de la tabla usando la función hash
-        auto& cell = table[hashValue]; // Referencia al bucket correspondiente
-        auto bItr = begin(cell);
+    if (keyFound) {
+        cout << "[INFO] Item(s) removed." << endl;
+    } else {
+        cout << "[WARNING] Key not found. Nothing removed." << endl;
+    }
+    }
 
-        // Recorre el bucket para encontrar la clave
-        for (; bItr != end(cell); bItr++) {
-            if (bItr->first == key) {
-                return bItr->second; // Retorna el valor asociado a la clave
-            }
+    // Busca un valor en la tabla usando la clave
+    vector<string> searchTable(int key) {
+    int hashValue = hashFunction(key);
+    auto& cell = table[hashValue];
+    vector<string> results;
+
+    for (const auto& item : cell) {
+        if (item.first == key) {
+            results.push_back(item.second);
         }
-        return "Key not found."; // Retorna un mensaje si la clave no es encontrada
+    }
+
+    if (results.empty()) {
+        cout << "[INFO] Key not found." << endl;
+    }
+
+    return results;
     }
 
     // Imprime el contenido de la tabla
     void printTable() {
-        for (int i = 0; i < capacity; i++) {
-            if (table[i].size() == 0) continue; // Omite los buckets vacíos
-            auto bItr = table[i].begin();
-            for (; bItr != table[i].end(); bItr++) {
-                cout << "Key: " << bItr->first << " Value: " << bItr->second << endl; // Imprime cada par clave-valor
-            }
+    for (int i = 0; i < capacity; i++) {
+        if (table[i].empty()) continue;
+        cout << "Bucket " << i << ":" << endl;
+        for (const auto& item : table[i]) {
+            cout << "  Key: " << item.first << " Value: " << item.second << endl;
         }
+    }
     }
 
     // Retorna el número de elementos en la tabla
@@ -135,70 +134,47 @@ public:
     }
 };
 
-// Inicializa el factor de carga estático
-const float HashTable::LOAD_FACTOR = 0.80f;
-
 int main() {
     HashTable ht;
 
-    // Verifica si la tabla está vacía
-    if (ht.isEmpty()) {
-        cout << "Correct Answer: Table is empty." << endl;
-    } else {
-        cout << "Incorrect Answer: Table is not empty." << endl;
-    }
-
-    // Inserciones para asegurar que se supere el factor de carga y se redimensione la tabla
+    // Inserciones iniciales
     ht.insertItem(905, "Jim");
     ht.insertItem(201, "Tom");
     ht.insertItem(332, "Bob");
     ht.insertItem(124, "Sally");
-    ht.insertItem(512, "Sue");
-    ht.insertItem(632, "Shawn");
-    ht.insertItem(422, "Tim");
-    ht.insertItem(432, "Rob");
-    ht.insertItem(111, "Rick");
     ht.insertItem(123, "Morty");
+    ht.insertItem(123, "Rick");  // Clave duplicada
+    ht.insertItem(123, "Summer");  // Otra clave duplicada
 
-    // Agregamos más elementos para asegurarnos de que el factor de carga se supere
-    ht.insertItem(543, "John");
-    ht.insertItem(654, "Alice");
-    ht.insertItem(765, "Eve");
-    ht.insertItem(876, "Charlie");
-
-    // Imprime la tabla después de las inserciones
     cout << "Table after insertions:" << endl;
     ht.printTable();
     cout << "Size: " << ht.getSize() << ", Capacity: " << ht.getCapacity() << endl;
 
-    // Verifica si la tabla está vacía nuevamente
-    if (ht.isEmpty()) {
-        cout << "Incorrect Answer: Table is empty." << endl;
-    } else {
-        cout << "Correct Answer: Table is not empty." << endl;
+    // Eliminar elementos
+    ht.removeItem(201);
+    ht.removeItem(123);  // Esto debería eliminar todas las entradas con clave 123
+
+    cout << "\nTable after removals:" << endl;
+    ht.printTable();
+    cout << "Size: " << ht.getSize() << ", Capacity: " << ht.getCapacity() << endl;
+
+    // Búsquedas
+    cout << "\nSearch for key 905:" << endl;
+    for (const auto& value : ht.searchTable(905)) {
+        cout << value << endl;
     }
 
-    // Elimina algunos elementos de la tabla
-    ht.removeItem(201);
-    ht.removeItem(422);
+    cout << "\nSearch for key 123 (should be empty):" << endl;
+    for (const auto& value : ht.searchTable(123)) {
+        cout << value << endl;
+    }
 
-    // Imprime la tabla después de las eliminaciones
-    cout << "Table after removals:" << endl;
+    // Insertar más elementos con la misma clave
+    ht.insertItem(332, "Alice");
+    ht.insertItem(332, "Eve");
+
+    cout << "\nTable after inserting duplicates:" << endl;
     ht.printTable();
     cout << "Size: " << ht.getSize() << ", Capacity: " << ht.getCapacity() << endl;
-
-    // Inserta un elemento con una clave duplicada
-    ht.insertItem(123, "Rodrigo");
-
-    // Imprime la tabla después de insertar una clave duplicada
-    cout << "Table after insertion of duplicate key:" << endl;
-    ht.printTable();
-    cout << "Size: " << ht.getSize() << ", Capacity: " << ht.getCapacity() << endl;
-
-    // Realiza algunas búsquedas en la tabla
-    cout << "Search for key 201: " << ht.searchTable(201) << endl;
-    cout << "Search for key 422: " << ht.searchTable(422) << endl;
-    cout << "Search for key 123: " << ht.searchTable(123) << endl;
-
     return 0;
 }
