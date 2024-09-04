@@ -12,35 +12,6 @@ struct Nodo {
     vector<vector<bool>> camino;
 };
 
-// Función que resuelve el laberinto utilizando backtracking
-bool solucionarLaberintoBacktracking(vector<vector<bool>>& laberinto, vector<vector<bool>>& solucion, int x, int y) {
-    // Comprobar si hemos llegado a la salida
-    if (x == laberinto.size() - 1 && y == laberinto[0].size() - 1) {
-        solucion[x][y] = true;
-        return true;
-    }
-
-    // Comprobar si la casilla actual es válida
-    if (x >= 0 && x < laberinto.size() && y >= 0 && y < laberinto[0].size() && laberinto[x][y] && !solucion[x][y]) {
-        // Marcar la casilla como visitada
-        solucion[x][y] = true;
-
-        // Explorar las cuatro direcciones posibles
-        if (solucionarLaberintoBacktracking(laberinto, solucion, x + 1, y) ||  // Abajo
-            solucionarLaberintoBacktracking(laberinto, solucion, x, y + 1) ||  // Derecha
-            solucionarLaberintoBacktracking(laberinto, solucion, x - 1, y) ||  // Arriba
-            solucionarLaberintoBacktracking(laberinto, solucion, x, y - 1)) {  // Izquierda
-            return true;
-        }
-
-        // Si no se encuentra solución, desmarcar la casilla
-        solucion[x][y] = false;
-    }
-
-    // No se encontró solución
-    return false;
-}
-
 // Función que resuelve el laberinto utilizando ramificación y poda con un stack
 bool solucionarLaberintoRamificacionPodaConStack(vector<vector<bool>>& laberinto, vector<vector<bool>>& solucion, int m, int n) {
     stack<Nodo> s;
@@ -91,23 +62,7 @@ int main() {
         }
     }
 
-    // Ejecutar el algoritmo de backtracking
-    vector<vector<bool>> solucionBacktracking(m, vector<bool>(n, false));
-    auto startBacktracking = high_resolution_clock::now();
-    if (solucionarLaberintoBacktracking(laberinto, solucionBacktracking, 0, 0)) {
-        auto endBacktracking = high_resolution_clock::now();
-        cout << "Solución utilizando backtracking:" << endl;
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                cout << solucionBacktracking[i][j] << " ";
-            }
-            cout << endl;
-        }
-    } else {
-        cout << "No se encontró solución utilizando backtracking." << endl;
-    }
-
-    // Primera ejecución de ramificación y poda con stack
+    // Primera ejecución
     vector<vector<bool>> solucionRamificacionPoda(m, vector<bool>(n, false));
     auto start1 = high_resolution_clock::now();
     if (solucionarLaberintoRamificacionPodaConStack(laberinto, solucionRamificacionPoda, m, n)) {
@@ -125,7 +80,7 @@ int main() {
         cout << "No se encontró solución utilizando ramificación y poda con stack en la primera ejecución." << endl;
     }
 
-    // Segunda ejecución de ramificación y poda con stack
+    // Segunda ejecución
     solucionRamificacionPoda.assign(m, vector<bool>(n, false));  // Reiniciar la solución
     auto start2 = high_resolution_clock::now();
     if (solucionarLaberintoRamificacionPodaConStack(laberinto, solucionRamificacionPoda, m, n)) {
