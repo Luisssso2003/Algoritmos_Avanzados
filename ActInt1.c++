@@ -19,6 +19,27 @@ bool contieneSubcadena(const std::string& transmission, const std::string& code,
     return pos != std::string::npos;
 }
 
+std::pair<int, int> encontrarSubcadenaMasLarga(const std::string& str1, const std::string& str2, int& maxLength) {
+    int m = str1.size(), n = str2.size();
+    std::vector<std::vector<int>> dp(m + 1, std::vector<int>(n + 1, 0));
+    int finPos = 0;
+    maxLength = 0;
+
+    for (int i = 1; i <= m; ++i) {
+        for (int j = 1; j <= n; ++j) {
+            if (str1[i - 1] == str2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+                if (dp[i][j] > maxLength) {
+                    maxLength = dp[i][j];
+                    finPos = i;  // Corrige el cálculo de finPos
+                }
+            }
+        }
+    }
+    int startPos = finPos - maxLength;
+    return {startPos + 1, finPos};  // Devuelve las posiciones correctas
+}
+
 int main() {
     // Leer las transmisiones y códigos maliciosos desde archivos
     std::string transmission1 = leerArchivo("transmission1.txt");
@@ -36,6 +57,19 @@ int main() {
     std::cout << (contieneSubcadena(transmission2, mcode1, pos) ? "true " + std::to_string(pos + 1) : "false") << std::endl;
     std::cout << (contieneSubcadena(transmission2, mcode2, pos) ? "true " + std::to_string(pos + 1) : "false") << std::endl;
     std::cout << (contieneSubcadena(transmission2, mcode3, pos) ? "true " + std::to_string(pos + 1) : "false") << std::endl;
+
+    int maxLength = 0;
+    auto posiciones = encontrarSubcadenaMasLarga(transmission1, transmission2, maxLength);
+
+    if (maxLength > 0) {
+        std::cout << "El substring común más largo tiene longitud: " << maxLength << std::endl;
+        std::cout << "Posición inicial en transmission1: " << posiciones.first << std::endl;
+        std::cout << "Posición final en transmission1: " << posiciones.second << std::endl;
+        std::string substringComun = transmission1.substr(posiciones.first - 1, maxLength);
+        std::cout << "El substring común más largo es: " << substringComun << std::endl;
+    } else {
+        std::cout << "No hay un substring común entre las transmisiones." << std::endl;
+    }
 
     return 0;
 }
