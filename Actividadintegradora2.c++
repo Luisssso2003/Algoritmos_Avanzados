@@ -2,11 +2,19 @@
 #include <vector>
 #include <queue>
 #include <limits>
-#include <cstring> // Para memset
+#include <algorithm> // Para sort en Kruskal
 
 using namespace std;
 
 const int INF = numeric_limits<int>::max();
+
+// Estructura para representar un borde entre dos colonias
+struct Arco {
+    int u, v, peso;
+    bool operator<(const Arco& other) const {
+        return peso < other.peso;
+    }
+};
 
 // Función para resolver el problema del viajero usando el algoritmo del mejor más próximo
 void problemaDelViajero(const vector<vector<int>>& distancias, int N) {
@@ -41,7 +49,7 @@ void problemaDelViajero(const vector<vector<int>>& distancias, int N) {
     ruta.push_back(0);
 
     // Mostrar la ruta y la distancia total
-    cout << "Ruta más corta para visitar todas las colonias:" << endl;
+    cout << "Ruta más corta para repartir correspondencia:" << endl;
     for (int i = 0; i < ruta.size(); ++i) {
         cout << char('A' + ruta[i]);
         if (i < ruta.size() - 1) cout << " -> ";
@@ -78,7 +86,7 @@ bool bfs(const vector<vector<int>>& capacidadResidual, vector<int>& parent, int 
 
 int edmondsKarp(const vector<vector<int>>& capacidad, int fuente, int sumidero, int N) {
     vector<vector<int>> capacidadResidual = capacidad;
-    vector<int> parent(N); // rastrear el camino aumentante.
+    vector<int> parent(N);
     int flujoMaximo = 0;
 
     // Mientras exista un camino aumentante
@@ -104,6 +112,51 @@ int edmondsKarp(const vector<vector<int>>& capacidad, int fuente, int sumidero, 
     return flujoMaximo;
 }
 
+// Función para encontrar el árbol de expansión mínima usando el algoritmo de Kruskal
+int encontrar(int u, vector<int>& padre) {
+    if (u == padre[u]) return u;
+    return padre[u] = encontrar(padre[u], padre); // Compresión de caminos
+}
+
+void unir(int u, int v, vector<int>& padre) {
+    padre[encontrar(u, padre)] = encontrar(v, padre);
+}
+
+void kruskalMST(const vector<vector<int>>& distancias, int N) {
+    vector<Arco> arcos;
+    
+    // Crear una lista de todos los arcos
+    for (int i = 0; i < N; ++i) {
+        for (int j = i + 1; j < N; ++j) {
+            if (distancias[i][j] != 0) {
+                arcos.push_back({i, j, distancias[i][j]});
+            }
+        }
+    }
+    
+    // Ordenar los arcos por peso
+    sort(arcos.begin(), arcos.end());
+
+    // Estructura de unión-búsqueda para detectar ciclos
+    vector<int> padre(N);
+    for (int i = 0; i < N; ++i) padre[i] = i;
+
+    // Armar el MST
+    vector<Arco> mst;
+    for (const auto& arco : arcos) {
+        if (encontrar(arco.u, padre) != encontrar(arco.v, padre)) {
+            unir(arco.u, arco.v, padre);
+            mst.push_back(arco);
+        }
+    }
+
+    // Mostrar el MST
+    cout << "Forma óptima de cablear las colonias con fibra óptica:" << endl;
+    for (const auto& arco : mst) {
+        cout << "(" << char('A' + arco.u) << ", " << char('A' + arco.v) << ")" << endl;
+    }
+}
+
 int main() {
     int N;
     cin >> N;
@@ -119,6 +172,9 @@ int main() {
     // Resolver el problema del viajero (ruta más corta)
     problemaDelViajero(distancias, N);
 
+    // Encontrar el árbol de expansión mínima (MST) para cablear las colonias
+    kruskalMST(distancias, N);
+
     // Recibir la matriz de capacidades de transmisión
     vector<vector<int>> capacidad(N, vector<int>(N));
     
@@ -129,7 +185,7 @@ int main() {
 
     // Definir el nodo fuente y sumidero
     int fuente = 0; // Nodo inicial (A)
-    int sumidero = N - 1; // Nodo final (última colonia, Z, B, etc.)
+    int sumidero = N - 1; // Nodo final (última colonia)
 
     // Calcular el flujo máximo de información entre la colonia fuente y la colonia sumidero
     int flujoMaximo = edmondsKarp(capacidad, fuente, sumidero, N);
