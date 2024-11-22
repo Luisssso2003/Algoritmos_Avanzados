@@ -1,31 +1,30 @@
 #include <iostream>
 #include <vector>
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <iomanip>
-using namespace std;
 
 struct Point {
     int x, y, index;
-    bool operator<(const Point &other) const {
-        return x < other.x || (x == other.x && y < other.y);
-    }
 };
 
 double distance(const Point &a, const Point &b) {
-    return hypot(a.x - b.x, a.y - b.y);
+    return std::hypot(a.x - b.x, a.y - b.y);
 }
 
 int cross(const Point &a, const Point &b, const Point &c) {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
-vector<Point> convexHull(vector<Point> &points) {
-    sort(points.begin(), points.end());
-    vector<Point> hull;
+std::vector<Point> convexHull(std::vector<Point> &points) {
+    std::sort(points.begin(), points.end(), [](const Point &p1, const Point &p2) {
+        return p1.x < p2.x || (p1.x == p2.x && p1.y < p2.y);
+    });
+
+    std::vector<Point> hull;
 
     for (const auto &p : points) {
-        while (hull.size() >= 2 && cross(hull[hull.size()-2], hull.back(), p) <= 0) {
+        while (hull.size() >= 2 && cross(hull[hull.size() - 2], hull.back(), p) <= 0) {
             hull.pop_back();
         }
         hull.push_back(p);
@@ -33,7 +32,7 @@ vector<Point> convexHull(vector<Point> &points) {
 
     size_t lower_size = hull.size();
     for (int i = points.size() - 2; i >= 0; --i) {
-        while (hull.size() > lower_size && cross(hull[hull.size()-2], hull.back(), points[i]) <= 0) {
+        while (hull.size() > lower_size && cross(hull[hull.size() - 2], hull.back(), points[i]) <= 0) {
             hull.pop_back();
         }
         hull.push_back(points[i]);
@@ -45,37 +44,38 @@ vector<Point> convexHull(vector<Point> &points) {
 
 int main() {
     int t;
-    cin >> t;
+    std::cin >> t;
+
     while (t--) {
         int n;
-        cin >> n;
+        std::cin >> n;
 
         if (n == 1) {
             int x, y;
-            cin >> x >> y;
-            cout << "0.00\n1\n\n";
+            std::cin >> x >> y;
+            std::cout << "0.00\n1\n\n";
             continue;
         }
 
-        vector<Point> points;
+        std::vector<Point> points(n);
         for (int i = 0; i < n; ++i) {
-            int x, y;
-            cin >> x >> y;
-            points.push_back({x, y, i + 1});
+            std::cin >> points[i].x >> points[i].y;
+            points[i].index = i + 1;
         }
 
-        vector<Point> hull = convexHull(points);
+        std::vector<Point> hull = convexHull(points);
 
         double perimeter = 0.0;
         for (size_t i = 0; i < hull.size(); ++i) {
             perimeter += distance(hull[i], hull[(i + 1) % hull.size()]);
         }
 
-        cout << fixed << setprecision(2) << perimeter << "\n";
+        std::cout << std::fixed << std::setprecision(2) << perimeter << "\n";
         for (const auto &p : hull) {
-            cout << p.index << " ";
+            std::cout << p.index << " ";
         }
-        cout << "\n\n";
+        std::cout << "\n\n";
     }
+
     return 0;
 }
